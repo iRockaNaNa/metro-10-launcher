@@ -120,4 +120,13 @@ class LauncherPreferences(private val context: Context) {
         }
         setPinnedTiles(current)
     }
+
+    suspend fun updateTileLiveMode(tile: PinnedTile, live: Boolean) {
+        val current = pinnedTiles.first().map {
+            if (it.packageName == tile.packageName && it.activityName == tile.activityName) {
+                it.copy(liveTile = live)
+            } else it
+        }
+        setPinnedTiles(current)
+    }
 }

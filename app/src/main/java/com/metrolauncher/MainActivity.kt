@@ -33,6 +33,7 @@ import com.metrolauncher.data.IconStyle
 import com.metrolauncher.data.LauncherFont
 import com.metrolauncher.data.LauncherPreferences
 import com.metrolauncher.data.LauncherRepository
+import com.metrolauncher.data.LiveTileContent
 import com.metrolauncher.data.PinnedTile
 import com.metrolauncher.ui.Screen
 import com.metrolauncher.ui.actioncenter.ActionCenterScreen
@@ -139,6 +140,9 @@ class MainActivity : ComponentActivity() {
                             onTileAccentChange = { tile, tileAccent ->
                                 scope.launch { prefs.updateTileAccent(tile, tileAccent) }
                             },
+                            onTileLiveModeChange = { tile, live ->
+                                scope.launch { prefs.updateTileLiveMode(tile, live) }
+                            },
                             onUnpinTile = { tile ->
                                 scope.launch { prefs.unpinTile(tile) }
                             },
@@ -163,6 +167,11 @@ class MainActivity : ComponentActivity() {
                                                 activityName = app.activityName,
                                                 label = app.label,
                                                 size = size,
+                                                // The built-in Clock tile is
+                                                // live from the moment it's
+                                                // pinned.
+                                                liveTile = app.packageName ==
+                                                    LiveTileContent.CLOCK_PACKAGE,
                                             )
                                         )
                                     }

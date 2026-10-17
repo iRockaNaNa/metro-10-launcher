@@ -5,6 +5,8 @@ package com.metrolauncher.data
  *
  * @param accentName optional [AccentColor] name overriding the global accent
  * for this tile; null means "use the global accent".
+ * @param liveTile when true, the tile flips on the live cadence (~10s) and
+ * shows live content where a provider exists (see [LiveTileContent]).
  */
 data class PinnedTile(
     val packageName: String,
@@ -12,13 +14,15 @@ data class PinnedTile(
     val label: String,
     val size: TileSize,
     val accentName: String? = null,
+    val liveTile: Boolean = false,
 )
 
 /**
  * Minimal pipe-delimited serialization so we can persist tiles in DataStore
  * without adding a serialization library. Format per tile:
- * `package|activity|label|SIZE|accentName` (accent may be empty).
- * Tiles are joined with `;;`. Labels are sanitized on write.
+ * `package|activity|label|SIZE|accentName|live` (accent may be empty, live is
+ * "1" when on). Tiles are joined with `;;`. Labels are sanitized on write.
+ * Rows written before the live flag existed (4–5 fields) still parse.
  */
 private const val FIELD_SEPARATOR = "|"
 private const val TILE_SEPARATOR = ";;"
@@ -31,7 +35,8 @@ fun PinnedTile.serialize(): String = listOf(
     activityName,
     sanitize(label),
     size.name,
-    accentName ?: ""
+    accentName ?: "",
+    if (liveTile) "1" else ""
 ).joinToString(FIELD_SEPARATOR)
 
 fun deserializeTile(raw: String): PinnedTile? {
@@ -44,6 +49,7 @@ fun deserializeTile(raw: String): PinnedTile? {
         label = parts[2],
         size = size,
         accentName = parts.getOrNull(4)?.takeIf { it.isNotBlank() },
+        liveTile = parts.getOrNull(5) == "1",
     )
 }
 

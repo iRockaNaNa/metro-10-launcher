@@ -43,6 +43,7 @@ fun StartScreen(
     onTileClick: (PinnedTile) -> Unit,
     onTileSizeChange: (PinnedTile, com.metrolauncher.data.TileSize) -> Unit,
     onTileAccentChange: (PinnedTile, AccentColor?) -> Unit,
+    onTileLiveModeChange: (PinnedTile, Boolean) -> Unit,
     onUnpinTile: (PinnedTile) -> Unit,
     onOpenAppList: () -> Unit,
     onOpenActionCenter: () -> Unit,
@@ -118,6 +119,10 @@ fun StartScreen(
                 },
                 onUnpin = {
                     onUnpinTile(tile)
+                    editingTile = null
+                },
+                onLiveModeChange = { live ->
+                    onTileLiveModeChange(tile, live)
                     editingTile = null
                 },
                 onDismiss = { editingTile = null },

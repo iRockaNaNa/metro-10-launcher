@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.provider.AlarmClock
 import android.provider.MediaStore
 
 /**
@@ -34,7 +35,7 @@ class LauncherRepository(private val context: Context) {
     /** All launchable apps, sorted alphabetically (case-insensitive). */
     fun getInstalledApps(): List<AppEntry> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(intent, 0)
+        val apps = packageManager.queryIntentActivities(intent, 0)
             .map { info ->
                 AppEntry(
                     label = info.loadLabel(packageManager).toString(),
@@ -42,7 +43,14 @@ class LauncherRepository(private val context: Context) {
                     activityName = info.activityInfo.name,
                 )
             }
-            .sortedBy { it.label.lowercase() }
+        // The built-in Clock live tile isn't an installed app, so it gets a
+        // synthetic entry here — long-pressing it pins it to Start like any
+        // other app, which is how existing installs add it.
+        return (apps + AppEntry(
+            label = "Clock",
+            packageName = LiveTileContent.CLOCK_PACKAGE,
+            activityName = LiveTileContent.CLOCK_ACTIVITY,
+        )).sortedBy { it.label.lowercase() }
     }
 
     fun loadIcon(entry: AppEntry): Drawable? =
@@ -58,6 +66,10 @@ class LauncherRepository(private val context: Context) {
         launch(ComponentName(tile.packageName, tile.activityName))
 
     private fun launch(component: ComponentName): Boolean {
+        // The Clock tile is synthetic: tapping it opens the system clock.
+        if (component.packageName == LiveTileContent.CLOCK_PACKAGE) {
+            return openSystemClock()
+        }
         val intent = packageManager.getLaunchIntentForPackage(component.packageName)
             ?: Intent(Intent.ACTION_MAIN)
                 .setComponent(component)
@@ -66,6 +78,21 @@ class LauncherRepository(private val context: Context) {
         return runCatching {
             context.startActivity(intent)
             true
+        }.getOrNull() ?: false
+    }
+
+    /** Opens the system clock app for the built-in Clock live tile. */
+    private fun openSystemClock(): Boolean {
+        val showAlarms =
+            Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val deskClock = runCatching {
+            packageManager.getLaunchIntentForPackage("com.android.deskclock")
+        }.getOrNull()?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return runCatching {
+            context.startActivity(showAlarms)
+            true
+        }.getOrNull() ?: runCatching {
+            deskClock?.let { context.startActivity(it); true } ?: false
         }.getOrNull() ?: false
     }
 
@@ -89,7 +116,7 @@ class LauncherRepository(private val context: Context) {
             // Contacts
             Triple(Intent(Intent.ACTION_VIEW).apply { type = "vnd.android.cursor.dir/contact" }, TileSize.SMALL, "Contacts"),
         )
-        return candidates.mapNotNull { (intent, size, fallbackLabel) ->
+        return (listOf(LiveTileContent.clockTile()) + candidates.mapNotNull { (intent, size, fallbackLabel) ->
             val resolved = packageManager.resolveActivity(intent, 0)?.activityInfo ?: return@mapNotNull null
             PinnedTile(
                 packageName = resolved.packageName,
@@ -97,6 +124,6 @@ class LauncherRepository(private val context: Context) {
                 label = resolved.loadLabel(packageManager)?.toString() ?: fallbackLabel,
                 size = size,
             )
-        }.distinctBy { it.packageName }.take(8)
+        }).distinctBy { it.packageName }.take(8)
     }
 }

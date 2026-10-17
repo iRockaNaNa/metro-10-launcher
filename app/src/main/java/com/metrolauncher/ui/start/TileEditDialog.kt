@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,17 +23,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.metrolauncher.data.AccentColor
+import com.metrolauncher.data.LiveTileContent
 import com.metrolauncher.data.PinnedTile
 import com.metrolauncher.data.TileSize
 
 /**
  * Long-press menu for a Start tile: resize (small/medium/wide, like
- * Windows 10 Mobile and MetroV) or unpin from Start.
+ * Windows 10 Mobile and MetroV), toggle live-tile mode, or unpin from Start.
  */
 @Composable
 fun TileEditDialog(
     tile: PinnedTile,
     onSizeChange: (TileSize) -> Unit,
+    onLiveModeChange: (Boolean) -> Unit,
     onUnpin: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -57,6 +60,33 @@ fun TileEditDialog(
                             onClick = { onSizeChange(size) },
                         )
                         Text(size.title)
+                    }
+                }
+                // Live content needs room to breathe: small tiles stay static.
+                if (tile.size != TileSize.SMALL) {
+                    val isClock = LiveTileContent.isClockTile(tile)
+                    Text(
+                        text = "live tile",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = if (isClock) "clock is always live"
+                            else "flip between faces every 10 seconds",
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(
+                            checked = tile.liveTile,
+                            onCheckedChange = onLiveModeChange,
+                            // The Clock tile is live by nature; it can't be
+                            // turned off.
+                            enabled = !isClock,
+                        )
                     }
                 }
             }

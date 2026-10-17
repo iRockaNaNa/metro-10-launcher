@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,17 +33,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metrolauncher.data.AccentColor
 import com.metrolauncher.data.IconStyle
+import com.metrolauncher.data.LiveTileContent
 import com.metrolauncher.data.PinnedTile
 import com.metrolauncher.data.TileSize
 import com.metrolauncher.util.toImageBitmap
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * A single Start-screen tile.
  *
  * Medium and wide tiles perform the signature Windows Phone "live tile"
- * flip every few seconds (MetroV does the same with its dynamic tiles);
- * small tiles stay static, like the original.
+ * flip (MetroV does the same with its dynamic tiles); small tiles stay
+ * static, like the original. Tiles with [PinnedTile.liveTile] flip on the
+ * live cadence (~10s) and show live content where a provider exists — v1
+ * ships the Clock tile, whose faces update every minute.
  */
 @Composable
 fun MetroTile(
@@ -54,16 +60,21 @@ fun MetroTile(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Live-tile flip state; only medium+ tiles flip.
+    val isClockTile = LiveTileContent.isClockTile(tile)
+    // Live tiles flip on the slower live cadence; everything else keeps the
+    // decorative flip. Small tiles never flip.
+    val isLive = tile.liveTile && tile.size != TileSize.SMALL
     var flipped by remember(tile.packageName, tile.activityName) { mutableStateOf(false) }
     if (tile.size != TileSize.SMALL) {
-        LaunchedEffect(tile.packageName, tile.activityName) {
+        LaunchedEffect(tile.packageName, tile.activityName, isLive) {
             while (true) {
-                delay(4500)
+                delay(if (isLive) 10_000 else 4_500)
                 flipped = !flipped
             }
         }
     }
+    // Clock content ticks over every minute; only started for the Clock tile.
+    val now = if (isClockTile) rememberClockMinute() else null
     val rotation by animateFloatAsState(
         targetValue = if (flipped) 180f else 0f,
         animationSpec = tween(durationMillis = 600),
@@ -88,11 +99,15 @@ fun MetroTile(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         if (rotation <= 90f) {
-            TileFront(
-                tile = tile,
-                iconStyle = iconStyle,
-                loadIcon = loadIcon,
-            )
+            if (isClockTile && now != null) {
+                ClockTileFace(tile = tile, now = now, back = false)
+            } else {
+                TileFront(
+                    tile = tile,
+                    iconStyle = iconStyle,
+                    loadIcon = loadIcon,
+                )
+            }
         } else {
             // Back face: mirror the rotation so the content reads correctly.
             Box(
@@ -101,16 +116,92 @@ fun MetroTile(
                     .graphicsLayer { rotationY = 180f },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = tile.label,
-                    color = Color.White,
-                    fontSize = if (tile.size == TileSize.WIDE) 22.sp else 16.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(12.dp),
-                )
+                if (isClockTile && now != null) {
+                    ClockTileFace(tile = tile, now = now, back = true)
+                } else {
+                    Text(
+                        text = tile.label,
+                        color = Color.White,
+                        fontSize = if (tile.size == TileSize.WIDE) 22.sp else 16.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * The current minute, re-emitted just past each minute boundary so clock
+ * faces roll over on time without waking the UI every second.
+ */
+@Composable
+private fun rememberClockMinute(): LocalDateTime {
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000 - (System.currentTimeMillis() % 60_000) + 250)
+            now = LocalDateTime.now()
+        }
+    }
+    return now
+}
+
+/**
+ * A face of the built-in Clock live tile: front shows the time, back shows
+ * the date — the classic Windows Phone clock tile.
+ */
+@Composable
+private fun ClockTileFace(
+    tile: PinnedTile,
+    now: LocalDateTime,
+    back: Boolean,
+) {
+    val primaryText = if (back) {
+        now.format(DateTimeFormatter.ofPattern("EEEE"))
+    } else {
+        now.format(DateTimeFormatter.ofPattern("h:mm"))
+    }
+    val secondaryText = if (back) {
+        now.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))
+    } else {
+        now.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
+    }
+    val primarySize = if (tile.size == TileSize.WIDE) 46.sp else 32.sp
+    val secondarySize = if (tile.size == TileSize.WIDE) 16.sp else 13.sp
+
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = primaryText,
+                color = Color.White,
+                fontSize = primarySize,
+                maxLines = 1,
+            )
+            Text(
+                text = secondaryText,
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = secondarySize,
+                maxLines = 1,
+            )
+        }
+
+        // App name, bottom-left — the Windows Phone signature.
+        Text(
+            text = tile.label,
+            color = Color.White,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 8.dp, bottom = 6.dp, end = 8.dp),
+        )
     }
 }
 

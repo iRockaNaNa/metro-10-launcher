@@ -17,6 +17,10 @@ with a few modern twists.
 
 - **Start screen** — 4-column tile grid (small / medium / wide tiles) with the signature
   Live Tile flip animation on medium and wide tiles
+- **Live Tiles** — Windows Phone-style: live tiles flip between faces every ~10 seconds.
+  Ships with a built-in **Clock** live tile (time/date faces that update every minute;
+  tap it to open your clock app; find it in the app list to pin it). Toggle live mode
+  per tile from the tile's long-press menu (medium and wide tiles)
 - **App list** — alphabetical sections with sticky letter headers, search, and a
   Windows Phone-style letter **jumplist** overlay for fast scrolling
 - **Pin / unpin / resize** — long-press any app in the list to pin it to Start;
@@ -76,6 +80,7 @@ app/src/main/
 │   │   ├── LauncherRepository.kt  # PackageManager queries, app launching, seed tiles
 │   │   ├── LauncherPreferences.kt # DataStore: font, icons, accent, theme, pins
 │   │   ├── PinnedTile.kt          # tile model + pipe-delimited serialization
+│   │   ├── LiveTileContent.kt     # built-in live tile providers (Clock)
 │   │   ├── TileSize.kt            # SMALL / MEDIUM / WIDE
 │   │   ├── LauncherFont.kt        # 5 font choices
 │   │   ├── IconStyle.kt           # 3 icon styles
@@ -93,7 +98,7 @@ app/src/main/
 
 ## Roadmap
 
-- Real Live Tile content (calendar appointments, weather, clock, photo cycle)
+- More Live Tile content (calendar appointments, weather, photo cycle)
 - Wire Action Center toggles to system services (permissions per toggle)
 - Drag-and-drop tile rearrangement
 - Folders on Start
