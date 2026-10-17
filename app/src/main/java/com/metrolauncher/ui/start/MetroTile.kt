@@ -2,6 +2,7 @@
 
 package com.metrolauncher.ui.start
 
+import android.Manifest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -36,6 +37,7 @@ import com.metrolauncher.data.IconStyle
 import com.metrolauncher.data.LiveTileContent
 import com.metrolauncher.data.PinnedTile
 import com.metrolauncher.data.TileSize
+import com.metrolauncher.data.photosPermission
 import com.metrolauncher.util.toImageBitmap
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
@@ -61,6 +63,9 @@ fun MetroTile(
     modifier: Modifier = Modifier,
 ) {
     val isClockTile = LiveTileContent.isClockTile(tile)
+    val isCalendarTile = LiveTileContent.isCalendarTile(tile)
+    val isWeatherTile = LiveTileContent.isWeatherTile(tile)
+    val isPhotosTile = LiveTileContent.isPhotosTile(tile)
     // Live tiles flip on the slower live cadence; everything else keeps the
     // decorative flip. Small tiles never flip.
     val isLive = tile.liveTile && tile.size != TileSize.SMALL
@@ -75,6 +80,50 @@ fun MetroTile(
     }
     // Clock content ticks over every minute; only started for the Clock tile.
     val now = if (isClockTile) rememberClockMinute() else null
+
+    // Runtime permissions for the content tiles. Launchers are registered
+    // only for the matching tile type; the type is stable per tile slot
+    // (the grid keys by package/activity), so conditional composition here
+    // is safe.
+    val (calendarPerm, requestCalendar) =
+        if (isCalendarTile) rememberTilePermission(Manifest.permission.READ_CALENDAR)
+        else TilePermission.UNKNOWN to {}
+    val (photoPerm, requestPhotos) =
+        if (isPhotosTile) rememberTilePermission(photosPermission())
+        else TilePermission.UNKNOWN to {}
+    val (locationPerm, requestLocation) =
+        if (isWeatherTile) rememberTilePermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+        else TilePermission.UNKNOWN to {}
+
+    // Weather degrades gracefully to Mesa, AZ without location, so its
+    // permission is asked once up front instead of gating the tile on a tap.
+    if (isWeatherTile) {
+        var locationAsked by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            if (!locationAsked && locationPerm == TilePermission.UNKNOWN) {
+                locationAsked = true
+                requestLocation()
+            }
+        }
+    }
+
+    // Calendar and Photos can't show anything without their permission:
+    // tapping the tile asks for it. Everything else taps through to launch.
+    val effectiveOnClick: () -> Unit = when {
+        isCalendarTile && calendarPerm != TilePermission.GRANTED -> requestCalendar
+        isPhotosTile && photoPerm != TilePermission.GRANTED -> requestPhotos
+        else -> onClick
+    }
+
+    val calendarEvents =
+        if (isCalendarTile) rememberCalendarEvents(calendarPerm == TilePermission.GRANTED)
+        else null
+    val (weather, weatherAttempted) =
+        if (isWeatherTile) rememberWeatherState(locationPerm == TilePermission.GRANTED)
+        else null to false
+    val photoUris =
+        if (isPhotosTile) rememberRecentPhotos(photoPerm == TilePermission.GRANTED)
+        else emptyList()
     val rotation by animateFloatAsState(
         targetValue = if (flipped) 180f else 0f,
         animationSpec = tween(durationMillis = 600),
@@ -96,13 +145,31 @@ fun MetroTile(
                 // Push the virtual camera back so the 3D flip doesn't distort.
                 cameraDistance = 12f * density
             }
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .combinedClickable(onClick = effectiveOnClick, onLongClick = onLongClick),
     ) {
         if (rotation <= 90f) {
-            if (isClockTile && now != null) {
-                ClockTileFace(tile = tile, now = now, back = false)
-            } else {
-                TileFront(
+            when {
+                isClockTile && now != null ->
+                    ClockTileFace(tile = tile, now = now, back = false)
+                isCalendarTile -> CalendarTileFace(
+                    tile = tile,
+                    events = calendarEvents,
+                    hasPermission = calendarPerm == TilePermission.GRANTED,
+                    back = false,
+                )
+                isWeatherTile -> WeatherTileFace(
+                    tile = tile,
+                    weather = weather,
+                    attempted = weatherAttempted,
+                    back = false,
+                )
+                isPhotosTile -> PhotosTileContent(
+                    tile = tile,
+                    uris = photoUris,
+                    hasPermission = photoPerm == TilePermission.GRANTED,
+                    back = false,
+                )
+                else -> TileFront(
                     tile = tile,
                     iconStyle = iconStyle,
                     loadIcon = loadIcon,
@@ -116,10 +183,28 @@ fun MetroTile(
                     .graphicsLayer { rotationY = 180f },
                 contentAlignment = Alignment.Center,
             ) {
-                if (isClockTile && now != null) {
-                    ClockTileFace(tile = tile, now = now, back = true)
-                } else {
-                    Text(
+                when {
+                    isClockTile && now != null ->
+                        ClockTileFace(tile = tile, now = now, back = true)
+                    isCalendarTile -> CalendarTileFace(
+                        tile = tile,
+                        events = calendarEvents,
+                        hasPermission = calendarPerm == TilePermission.GRANTED,
+                        back = true,
+                    )
+                    isWeatherTile -> WeatherTileFace(
+                        tile = tile,
+                        weather = weather,
+                        attempted = weatherAttempted,
+                        back = true,
+                    )
+                    isPhotosTile -> PhotosTileContent(
+                        tile = tile,
+                        uris = photoUris,
+                        hasPermission = photoPerm == TilePermission.GRANTED,
+                        back = true,
+                    )
+                    else -> Text(
                         text = tile.label,
                         color = Color.White,
                         fontSize = if (tile.size == TileSize.WIDE) 22.sp else 16.sp,

@@ -6,6 +6,17 @@
          the QUERY_ALL_PACKAGES declaration form. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
+    <!-- Calendar live tile: upcoming appointments. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- Weather live tile: Open-Meteo fetch + optional device location. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Photos live tile: recent images from the media store. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
     <application
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher_tile"

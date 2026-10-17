@@ -64,7 +64,13 @@ fun TileEditDialog(
                 }
                 // Live content needs room to breathe: small tiles stay static.
                 if (tile.size != TileSize.SMALL) {
-                    val isClock = LiveTileContent.isClockTile(tile)
+                    val builtinName = when {
+                        LiveTileContent.isClockTile(tile) -> "clock"
+                        LiveTileContent.isCalendarTile(tile) -> "calendar"
+                        LiveTileContent.isWeatherTile(tile) -> "weather"
+                        LiveTileContent.isPhotosTile(tile) -> "photos"
+                        else -> null
+                    }
                     Text(
                         text = "live tile",
                         style = MaterialTheme.typography.labelSmall,
@@ -76,16 +82,16 @@ fun TileEditDialog(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
-                            text = if (isClock) "clock is always live"
+                            text = if (builtinName != null) "$builtinName is always live"
                             else "flip between faces every 10 seconds",
                             modifier = Modifier.weight(1f),
                         )
                         Switch(
                             checked = tile.liveTile,
                             onCheckedChange = onLiveModeChange,
-                            // The Clock tile is live by nature; it can't be
-                            // turned off.
-                            enabled = !isClock,
+                            // The built-in tiles are live by nature; their
+                            // live mode can't be turned off.
+                            enabled = builtinName == null,
                         )
                     }
                 }

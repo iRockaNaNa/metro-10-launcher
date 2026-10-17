@@ -43,13 +43,30 @@ class LauncherRepository(private val context: Context) {
                     activityName = info.activityInfo.name,
                 )
             }
-        // The built-in Clock live tile isn't an installed app, so it gets a
-        // synthetic entry here — long-pressing it pins it to Start like any
-        // other app, which is how existing installs add it.
-        return (apps + AppEntry(
-            label = "Clock",
-            packageName = LiveTileContent.CLOCK_PACKAGE,
-            activityName = LiveTileContent.CLOCK_ACTIVITY,
+        // The built-in live tiles aren't installed apps, so they get synthetic
+        // entries here — long-pressing one pins it to Start like any other
+        // app, which is how existing installs add them.
+        return (apps + listOf(
+            AppEntry(
+                label = "Clock",
+                packageName = LiveTileContent.CLOCK_PACKAGE,
+                activityName = LiveTileContent.CLOCK_ACTIVITY,
+            ),
+            AppEntry(
+                label = "Calendar",
+                packageName = LiveTileContent.CALENDAR_PACKAGE,
+                activityName = LiveTileContent.CALENDAR_ACTIVITY,
+            ),
+            AppEntry(
+                label = "Weather",
+                packageName = LiveTileContent.WEATHER_PACKAGE,
+                activityName = LiveTileContent.WEATHER_ACTIVITY,
+            ),
+            AppEntry(
+                label = "Photos",
+                packageName = LiveTileContent.PHOTOS_PACKAGE,
+                activityName = LiveTileContent.PHOTOS_ACTIVITY,
+            ),
         )).sortedBy { it.label.lowercase() }
     }
 
@@ -66,9 +83,19 @@ class LauncherRepository(private val context: Context) {
         launch(ComponentName(tile.packageName, tile.activityName))
 
     private fun launch(component: ComponentName): Boolean {
-        // The Clock tile is synthetic: tapping it opens the system clock.
+        // The built-in tiles are synthetic: tapping each opens a sensible
+        // target (system clock / calendar / weather site / gallery).
         if (component.packageName == LiveTileContent.CLOCK_PACKAGE) {
             return openSystemClock()
+        }
+        if (component.packageName == LiveTileContent.CALENDAR_PACKAGE) {
+            return openSystemCalendar()
+        }
+        if (component.packageName == LiveTileContent.WEATHER_PACKAGE) {
+            return openWeatherSite()
+        }
+        if (component.packageName == LiveTileContent.PHOTOS_PACKAGE) {
+            return openPhotoGallery()
         }
         val intent = packageManager.getLaunchIntentForPackage(component.packageName)
             ?: Intent(Intent.ACTION_MAIN)
@@ -93,6 +120,45 @@ class LauncherRepository(private val context: Context) {
             true
         }.getOrNull() ?: runCatching {
             deskClock?.let { context.startActivity(it); true } ?: false
+        }.getOrNull() ?: false
+    }
+
+    /** Opens the system calendar app for the built-in Calendar live tile. */
+    private fun openSystemCalendar(): Boolean {
+        val timeUri = android.provider.CalendarContract.CONTENT_URI.buildUpon()
+            .appendPath("time")
+            .appendPath(System.currentTimeMillis().toString())
+            .build()
+        return runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, timeUri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            true
+        }.getOrNull() ?: false
+    }
+
+    /**
+     * Opens the weather source in the browser for the built-in Weather live
+     * tile (there's no guaranteed weather app to target).
+     */
+    private fun openWeatherSite(): Boolean = runCatching {
+        context.startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                android.net.Uri.parse("https://open-meteo.com"),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        true
+    }.getOrNull() ?: false
+
+    /** Opens the photo gallery for the built-in Photos live tile. */
+    private fun openPhotoGallery(): Boolean {
+        val gallery = Intent(Intent.ACTION_VIEW)
+            .setType("image/*")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return runCatching {
+            context.startActivity(gallery)
+            true
         }.getOrNull() ?: false
     }
 

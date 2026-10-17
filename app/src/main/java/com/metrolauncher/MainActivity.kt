@@ -167,11 +167,13 @@ class MainActivity : ComponentActivity() {
                                                 activityName = app.activityName,
                                                 label = app.label,
                                                 size = size,
-                                                // The built-in Clock tile is
-                                                // live from the moment it's
-                                                // pinned.
-                                                liveTile = app.packageName ==
-                                                    LiveTileContent.CLOCK_PACKAGE,
+                                                // The built-in live tiles
+                                                // (Clock, Calendar, Weather,
+                                                // Photos) are live from the
+                                                // moment they're pinned.
+                                                liveTile = LiveTileContent.isBuiltinPackage(
+                                                    app.packageName
+                                                ),
                                             )
                                         )
                                     }

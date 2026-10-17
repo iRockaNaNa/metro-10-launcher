@@ -18,9 +18,13 @@ with a few modern twists.
 - **Start screen** — 4-column tile grid (small / medium / wide tiles) with the signature
   Live Tile flip animation on medium and wide tiles
 - **Live Tiles** — Windows Phone-style: live tiles flip between faces every ~10 seconds.
-  Ships with a built-in **Clock** live tile (time/date faces that update every minute;
-  tap it to open your clock app; find it in the app list to pin it). Toggle live mode
-  per tile from the tile's long-press menu (medium and wide tiles)
+  Ships with four built-in live tiles, all pinnable from the app list:
+  **Clock** (time/date faces that update every minute; tap it to open your clock app),
+  **Calendar** (your next appointments; tap it to open your calendar),
+  **Weather** (current temp + condition, flips to today's high/low, via Open-Meteo;
+  tap it to open the forecast site), and **Photos** (cycles your recent photos on
+  every flip; tap it to open your gallery). Toggle live mode per tile from the
+  tile's long-press menu (medium and wide tiles; built-in tiles are always live)
 - **App list** — alphabetical sections with sticky letter headers, search, and a
   Windows Phone-style letter **jumplist** overlay for fast scrolling
 - **Pin / unpin / resize** — long-press any app in the list to pin it to Start;
@@ -80,7 +84,10 @@ app/src/main/
 │   │   ├── LauncherRepository.kt  # PackageManager queries, app launching, seed tiles
 │   │   ├── LauncherPreferences.kt # DataStore: font, icons, accent, theme, pins
 │   │   ├── PinnedTile.kt          # tile model + pipe-delimited serialization
-│   │   ├── LiveTileContent.kt     # built-in live tile providers (Clock)
+│   │   ├── LiveTileContent.kt     # built-in live tile providers
+│   │   │                              # (Clock, Calendar, Weather, Photos)
+│   │   ├── LiveTileProviders.kt   # calendar / weather / photos data layer
+│   │   │                              # (CalendarContract, Open-Meteo, MediaStore)
 │   │   ├── TileSize.kt            # SMALL / MEDIUM / WIDE
 │   │   ├── LauncherFont.kt        # 5 font choices
 │   │   ├── IconStyle.kt           # 3 icon styles
@@ -88,7 +95,8 @@ app/src/main/
 │   └── ui/
 │       ├── Screen.kt              # navigation destinations
 │       ├── theme/                 # Material3 theme driven by accent + font picks
-│       ├── start/                 # Start grid, Live Tile flip, edit dialogs,
+│       ├── start/                 # Start grid, Live Tile flip + faces
+│       │                          # (Clock/Calendar/Weather/Photos), edit dialogs,
 │       │                          # per-tile color, "pick a look" onboarding
 │       ├── applist/               # alphabetical list, search, jumplist overlay
 │       ├── settings/              # Metro-style settings + pickers
@@ -98,7 +106,6 @@ app/src/main/
 
 ## Roadmap
 
-- More Live Tile content (calendar appointments, weather, photo cycle)
 - Wire Action Center toggles to system services (permissions per toggle)
 - Drag-and-drop tile rearrangement
 - Folders on Start
