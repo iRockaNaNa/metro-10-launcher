@@ -36,7 +36,7 @@ with a few modern twists.
   or monochrome outline treatments
 - **Accent color picker** — the authentic 20-color Windows Phone palette
 - **Dark / light theme**, Metro-styled settings menu (lowercase, like the original)
-- **Action Center** — quick-toggles screen (UI scaffold; system wiring is roadmap)
+- **Action Center** — quick toggles wired to system services (flashlight, bluetooth, rotation lock, brightness, do not disturb; wi-fi and airplane mode deep-link to system settings)
 - **"Pick a look" onboarding** — theme + accent setup on first run
 
 ## Screenshots
@@ -106,7 +106,7 @@ app/src/main/
 
 ## Roadmap
 
-- Wire Action Center toggles to system services (permissions per toggle)
+- Google Now-like Panel (swipe to the right) — Google Now card layout, content sourced from Windows Central (windowscentral.com)
 - Drag-and-drop tile rearrangement
 - Folders on Start
 - Bundled Segoe UI-like and rounded font files under `res/font/`
