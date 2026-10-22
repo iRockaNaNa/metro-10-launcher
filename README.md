@@ -1,4 +1,4 @@
-# Metro Launcher
+# Metro 10 Launcher
 
 An open-source Android launcher that recreates the **Windows 10 Mobile** Start experience —
 Live Tiles, the alphabetical app list with jumplist, and the classic 20-color accent palette —
@@ -53,8 +53,8 @@ Requirements: **Android Studio Hedgehog or newer**, **JDK 17**.
 
 ```bash
 # Clone
-git clone https://github.com/<you>/metro-launcher.git
-cd metro-launcher
+git clone https://github.com/<you>/metro-10-launcher.git
+cd metro-10-launcher
 
 # Open in Android Studio and press Run,
 # or build from the command line:

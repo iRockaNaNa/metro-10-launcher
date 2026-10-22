@@ -90,7 +90,7 @@ fun SettingsScreen(
     if (showAbout) {
         AlertDialog(
             onDismissRequest = { showAbout = false },
-            title = { Text("Metro Launcher") },
+            title = { Text("Metro 10 Launcher") },
             text = {
                 Text(
                     "An open-source Windows 10 Mobile-style launcher for Android.\n\n" +
