@@ -5,7 +5,7 @@ Live Tiles, the alphabetical app list with jumplist, and the classic 20-color ac
 with a few modern twists.
 
 > **Design reference:** [MetroV Launcher](https://play.google.com/store/apps/details?id=com.tuzkituan.metrov)
-> (by Nguyễn Ngọc Tuân) was used as the key reference for this build: its tile flip
+> (by Tuan Nguyen) was used as the key reference for this build: its tile flip
 > animations, Metro-styled settings menu, per-tile resize/color customization, font options,
 > alphabetical app list with letter jumplist, and swipe-to-Action-Center gesture all
 > informed the design here. MetroV is not affiliated with this project, and this project
