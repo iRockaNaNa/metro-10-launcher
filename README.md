@@ -36,7 +36,12 @@ with a few modern twists.
   or monochrome outline treatments
 - **Accent color picker** — the authentic 20-color Windows Phone palette
 - **Dark / light theme**, Metro-styled settings menu (lowercase, like the original)
-- **Action Center** — quick toggles wired to system services (flashlight, bluetooth, rotation lock, brightness, do not disturb; wi-fi and airplane mode deep-link to system settings)
+- **Feed panel** — swipe right on Start for a Google Now-style card feed sourced from
+  Windows Central (RSS): hero image, headline, description, and category/time on each
+  card; tap a card to open the story. Swipe left (or back) to return to Start
+- **Action Center** — swipe down from the top edge of Start; quick toggles wired to
+  system services (flashlight, bluetooth, rotation lock, brightness, do not disturb;
+  wi-fi and airplane mode deep-link to system settings)
 - **"Pick a look" onboarding** — theme + accent setup on first run
 
 ## Screenshots
@@ -79,7 +84,8 @@ app/src/main/
 ├── AndroidManifest.xml            # HOME/DEFAULT intent filters → real launcher
 ├── java/com/metrolauncher/
 │   ├── MainActivity.kt            # entry point, prefs wiring, hand-rolled nav,
-│   │                              # swipe gestures (left: apps, right: action center)
+│   │                              # swipe gestures (left: apps, right: feed,
+│   │                              # down from top edge: action center)
 │   ├── data/
 │   │   ├── LauncherRepository.kt  # PackageManager queries, app launching, seed tiles
 │   │   ├── LauncherPreferences.kt # DataStore: font, icons, accent, theme, pins
@@ -88,6 +94,7 @@ app/src/main/
 │   │   │                              # (Clock, Calendar, Weather, Photos)
 │   │   ├── LiveTileProviders.kt   # calendar / weather / photos data layer
 │   │   │                              # (CalendarContract, Open-Meteo, MediaStore)
+│   │   ├── FeedContent.kt         # Feed panel data layer (Windows Central RSS)
 │   │   ├── TileSize.kt            # SMALL / MEDIUM / WIDE
 │   │   ├── LauncherFont.kt        # 5 font choices
 │   │   ├── IconStyle.kt           # 3 icon styles
@@ -100,13 +107,13 @@ app/src/main/
 │       │                          # per-tile color, "pick a look" onboarding
 │       ├── applist/               # alphabetical list, search, jumplist overlay
 │       ├── settings/              # Metro-style settings + pickers
-│       └── actioncenter/          # quick toggles (UI scaffold)
+│       ├── feed/                  # Google Now-style card feed (Windows Central)
+│       └── actioncenter/          # quick toggles wired to system services
 └── res/                           # launcher icon, theme placeholder
 ```
 
 ## Roadmap
 
-- Google Now-like Panel (swipe to the right) — Google Now card layout, content sourced from Windows Central (windowscentral.com)
 - Drag-and-drop tile rearrangement
 - Folders on Start
 - Bundled Segoe UI-like and rounded font files under `res/font/`

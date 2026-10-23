@@ -57,8 +57,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    // Material icons for the settings/action-center glyphs
-    implementation("androidx.compose.material:material-icons-core")
+    // Material icons for the settings/action-center glyphs. Extended (a
+    // superset of core) is required: several Action Center icons — wifi,
+    // bluetooth, flashlight, screen rotation, brightness, do-not-disturb,
+    // airplane mode — are not in material-icons-core.
+    implementation("androidx.compose.material:material-icons-extended")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

@@ -5,8 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,8 +28,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import com.metrolauncher.data.AccentColor
 import com.metrolauncher.data.AppEntry
 import com.metrolauncher.data.IconStyle
@@ -38,6 +43,7 @@ import com.metrolauncher.data.PinnedTile
 import com.metrolauncher.ui.Screen
 import com.metrolauncher.ui.actioncenter.ActionCenterScreen
 import com.metrolauncher.ui.applist.AppListScreen
+import com.metrolauncher.ui.feed.FeedScreen
 import com.metrolauncher.ui.settings.AccentPickerScreen
 import com.metrolauncher.ui.settings.FontPickerScreen
 import com.metrolauncher.ui.settings.IconStylePickerScreen
@@ -103,17 +109,47 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // MetroV-style gesture nav on Start: swipe left -> app list,
-                // swipe right -> action center.
-                val swipeNav = if (screen == Screen.Start) {
-                    Modifier.pointerInput(Unit) {
+                // Gesture nav, Windows Phone style: on Start, swipe left ->
+                // app list, swipe right -> the Feed panel, and swipe down
+                // from the top edge -> Action Center (that's how WP opened
+                // it). On the Feed, swipe left -> back to Start.
+                val swipeNav = when (screen) {
+                    Screen.Start -> Modifier.pointerInput(Unit) {
                         var totalX = 0f
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> totalX += dragAmount },
                             onDragEnd = {
                                 when {
                                     totalX < -120 -> currentScreen.value = Screen.AppList
-                                    totalX > 120 -> currentScreen.value = Screen.ActionCenter
+                                    totalX > 120 -> currentScreen.value = Screen.Feed
+                                }
+                            },
+                        )
+                    }
+                    Screen.Feed -> Modifier.pointerInput(Unit) {
+                        var totalX = 0f
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { _, dragAmount -> totalX += dragAmount },
+                            onDragEnd = {
+                                if (totalX < -120) currentScreen.value = Screen.Start
+                            },
+                        )
+                    }
+                    else -> Modifier
+                }
+
+                // Top-edge pull-down strip for the Action Center, only on
+                // Start. A thin invisible grab zone at the very top (like
+                // pulling down the WP status bar) so it never fights the
+                // tile grid's own vertical scrolling.
+                val actionCenterPull = if (screen == Screen.Start) {
+                    Modifier.pointerInput(Unit) {
+                        var totalY = 0f
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { _, dragAmount -> totalY += dragAmount },
+                            onDragEnd = {
+                                if (totalY > 90) {
+                                    currentScreen.value = Screen.ActionCenter
                                 }
                             },
                         )
@@ -233,6 +269,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        Screen.Feed -> SubScreenScaffold(
+                            title = "feed",
+                            onBack = { currentScreen.value = Screen.Start },
+                            onOpenSettings = null,
+                        ) {
+                            FeedScreen()
+                        }
+
                         Screen.ActionCenter -> SubScreenScaffold(
                             title = "action center",
                             onBack = { currentScreen.value = Screen.Start },
@@ -240,6 +284,18 @@ class MainActivity : ComponentActivity() {
                         ) {
                             ActionCenterScreen()
                         }
+                    }
+
+                    // Invisible top-edge grab zone: pull down -> Action
+                    // Center. Drawn last so it sits above the Start grid.
+                    if (screen == Screen.Start) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth()
+                                .height(28.dp)
+                                .then(actionCenterPull)
+                        )
                     }
                 }
             }

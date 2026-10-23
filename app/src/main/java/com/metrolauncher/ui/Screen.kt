@@ -13,4 +13,5 @@ sealed class Screen {
     data object IconStylePicker : Screen()
     data object AccentPicker : Screen()
     data object ActionCenter : Screen()
+    data object Feed : Screen()
 }
