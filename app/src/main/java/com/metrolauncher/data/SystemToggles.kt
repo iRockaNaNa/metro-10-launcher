@@ -138,16 +138,20 @@ object SystemToggles {
 
     /**
      * Turning Bluetooth on always goes through the system consent dialog —
-     * launch the returned intent. Turning it off tries [BluetoothAdapter.disable];
-     * false means the platform refused (API 33+), so open settings instead.
+     * launch the returned intent. Turning it off tries [BluetoothAdapter.disable]
+     * on API 32 and below; on API 33+ that call is deprecated and the
+     * platform refuses it, so false is returned and the caller should open
+     * settings instead.
      */
     fun bluetoothEnableIntent(): Intent =
         Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     fun tryDisableBluetooth(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return false
         if (!hasBluetoothConnectPermission(context)) return false
         return try {
+            @Suppress("DEPRECATION")
             bluetoothAdapter(context)?.disable() == true
         } catch (e: SecurityException) {
             false

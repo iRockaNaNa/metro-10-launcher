@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -52,7 +53,9 @@ fun StartScreen(
     var editingTile by remember { mutableStateOf<PinnedTile?>(null) }
     var accentEditingTile by remember { mutableStateOf<PinnedTile?>(null) }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // Edge-to-edge is enforced when targeting API 35+: keep the grid
+    // clear of the status and navigation bars.
+    Box(modifier = modifier.fillMaxSize().systemBarsPadding()) {
         if (tiles.isEmpty()) {
             // First-run empty state pointing at the app list.
             Column(

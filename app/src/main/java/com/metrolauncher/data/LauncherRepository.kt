@@ -4,7 +4,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.provider.AlarmClock
 import android.provider.MediaStore
 
@@ -35,7 +37,7 @@ class LauncherRepository(private val context: Context) {
     /** All launchable apps, sorted alphabetically (case-insensitive). */
     fun getInstalledApps(): List<AppEntry> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val apps = packageManager.queryIntentActivities(intent, 0)
+        val apps = queryLaunchable(intent)
             .map { info ->
                 AppEntry(
                     label = info.loadLabel(packageManager).toString(),
@@ -183,7 +185,7 @@ class LauncherRepository(private val context: Context) {
             Triple(Intent(Intent.ACTION_VIEW).apply { type = "vnd.android.cursor.dir/contact" }, TileSize.SMALL, "Contacts"),
         )
         return (listOf(LiveTileContent.clockTile()) + candidates.mapNotNull { (intent, size, fallbackLabel) ->
-            val resolved = packageManager.resolveActivity(intent, 0)?.activityInfo ?: return@mapNotNull null
+            val resolved = resolveOne(intent)?.activityInfo ?: return@mapNotNull null
             PinnedTile(
                 packageName = resolved.packageName,
                 activityName = resolved.name,
@@ -192,4 +194,32 @@ class LauncherRepository(private val context: Context) {
             )
         }).distinctBy { it.packageName }.take(8)
     }
+
+    /**
+     * The int-flag overloads of [PackageManager.queryIntentActivities] and
+     * [PackageManager.resolveActivity] are deprecated on API 33+; these
+     * helpers use the [PackageManager.ResolveInfoFlags] overloads there and
+     * fall back to the legacy calls on older devices.
+     */
+    private fun queryLaunchable(intent: Intent): List<ResolveInfo> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.queryIntentActivities(
+                intent,
+                PackageManager.ResolveInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(intent, 0)
+        }
+
+    private fun resolveOne(intent: Intent): ResolveInfo? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.resolveActivity(
+                intent,
+                PackageManager.ResolveInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.resolveActivity(intent, 0)
+        }
 }

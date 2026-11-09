@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -12,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -60,6 +61,9 @@ class MainActivity : ComponentActivity() {
     private val currentScreen = mutableStateOf<Screen>(Screen.Start)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Targeting API 35+ enforces edge-to-edge; opt in explicitly so
+        // status/navigation bars render correctly on all OS versions.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         // Back always returns to Start first, like a real launcher.
@@ -321,7 +325,7 @@ private fun SubScreenScaffold(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
                     }
                 },
                 actions = {
